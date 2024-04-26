@@ -1,4 +1,5 @@
 # US visa scheduler on Jetson Nano
+Note: The program was originally from https://github.com/Soroosh-N/us_visa_scheduler and made executable on the Jetson Nano platform.
 The visa_rescheduler is a bot for US VISA (usvisa-info.com) appointment rescheduling. This bot/program has been tested on the Jetson Nano platform.
 
 ## Prerequisites
