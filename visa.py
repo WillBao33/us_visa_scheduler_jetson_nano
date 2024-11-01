@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait as Wait
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException
 
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
@@ -169,17 +170,33 @@ def auto_action(label, find_by, el_type, action, value, sleep_time=0):
 
 
 def start_process():
-    # Bypass reCAPTCHA
-    driver.get(SIGN_IN_LINK)
-    time.sleep(STEP_TIME)
-    Wait(driver, 60).until(EC.presence_of_element_located((By.NAME, "commit")))
-    auto_action("Click bounce", "xpath", '//a[@class="down-arrow bounce"]', "click", "", STEP_TIME)
-    auto_action("Email", "id", "user_email", "send", USERNAME, STEP_TIME)
-    auto_action("Password", "id", "user_password", "send", PASSWORD, STEP_TIME)
-    auto_action("Privacy", "class", "icheckbox", "click", "", STEP_TIME)
-    auto_action("Enter Panel", "name", "commit", "click", "", STEP_TIME)
-    Wait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//a[contains(text(), '" + REGEX_CONTINUE + "')]")))
-    print("\n\tlogin successful!\n")
+    try:
+        # Navigate to the sign-in page and wait
+        driver.get(SIGN_IN_LINK)
+        time.sleep(STEP_TIME)
+
+        # Wait for the "commit" element to appear, allowing for extended time
+        Wait(driver, 90).until(EC.visibility_of_element_located((By.NAME, "commit")))
+        
+        # Perform actions on the page
+        auto_action("Click bounce", "xpath", '//a[@class="down-arrow bounce"]', "click", "", STEP_TIME)
+        auto_action("Email", "id", "user_email", "send", USERNAME, STEP_TIME)
+        auto_action("Password", "id", "user_password", "send", PASSWORD, STEP_TIME)
+        auto_action("Privacy", "class", "icheckbox", "click", "", STEP_TIME)
+        auto_action("Enter Panel", "name", "commit", "click", "", STEP_TIME)
+
+        # Wait for the continue link element with text containing REGEX_CONTINUE
+        Wait(driver, 90).until(EC.presence_of_element_located((By.XPATH, "//a[contains(text(), '" + REGEX_CONTINUE + "')]")))
+        print("\n\tLogin successful!\n")
+        
+    except TimeoutException:
+        # If timeout occurs, save a screenshot and print an error message
+        screenshot_path = "screenshot_timeout.png"
+        driver.save_screenshot(screenshot_path)
+        print(f"TimeoutException: Could not locate element within the specified timeout. Screenshot saved at {screenshot_path}")
+        
+        # Optionally raise the TimeoutException to indicate the function failure
+        raise TimeoutException("Failed to locate a necessary element for login process within the timeout period.")
 
 def reschedule(date):
     time = get_time(date)
